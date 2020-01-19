@@ -55,11 +55,29 @@ void render_gui()
 	static int counter = 0;
 	static bool show_fps = false;
 
-	ImGui::Begin("Debug Information");
 
-	ImGui::Checkbox("Show FPS", &show_fps);
+	ImGui::Begin("Timer Settings");
 
-	ImGui::Text("FPS: %.1f (%.3f ms/frame)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
+	static int pomodoro_duration = 25;
+	ImGui::InputInt("Pomodoro duration (minutes)", &pomodoro_duration);
+	//ImGui::PushItemWidth(1000);
+
+	const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
+	static const char* current_item = NULL;
+
+	if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+		{
+			bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
+			if (ImGui::Selectable(items[n], is_selected))
+				current_item = items[n];
+			if (is_selected)
+				ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+		}
+		ImGui::EndCombo();
+	}
+
 
 	ImGui::Text("OpenGL version: %s", glGetString(GL_VERSION));
 	ImGui::Text("GPU vendor: %s", glGetString(GL_VENDOR));
@@ -77,7 +95,7 @@ int main(void)
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
-	window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+	window = glfwCreateWindow(1280, 720, "Simple example", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
