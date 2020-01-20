@@ -22,6 +22,9 @@ static bool working = true;
 
 static void reset_timer(bool go_next)
 {
+	// play OS's notification sound
+	printf("\a");
+
 	if (go_next)
 		working = !working;
 	
