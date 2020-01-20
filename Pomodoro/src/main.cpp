@@ -11,13 +11,28 @@
 
 static int screen_width, screen_height;
 
-static int pomodoro_duration = 25;
-static int break_duration = 5;
+static int pomodoro_duration = 2;
+static int break_duration = 1;
 
 static int minutes_left = pomodoro_duration;
 static int seconds_left = 0;
 static bool paused = true;
+static bool working = true;
 
+
+static void reset_timer(bool go_next)
+{
+	if (go_next)
+		working = !working;
+	
+	if (working)
+		minutes_left = pomodoro_duration;
+	else
+		minutes_left = break_duration;
+
+	seconds_left = 0;
+	paused = false;
+}
 
 static void error_callback(int error, const char* description)
 {
@@ -68,6 +83,11 @@ static void render_gui()
 
 	ImGui::Begin("Pomodoro Timer");
 
+	if (working)
+		ImGui::Text("Focused Work");
+	else
+		ImGui::Text("Short Break");
+
 	ImGui::Text("%.2d:%.2d", minutes_left, seconds_left);
 
 	if (ImGui::Button("Start/Pause"))
@@ -75,14 +95,15 @@ static void render_gui()
 		// if the button has been pressed
 		paused = !paused;
 	}
-
 	ImGui::SameLine();
-
 	if (ImGui::Button("Reset"))
 	{
-		minutes_left = pomodoro_duration;
-		seconds_left = 0;
-		paused = !paused;
+		reset_timer(false);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Skip"))
+	{
+		reset_timer(true);
 	}
 
 	ImGui::End();
@@ -146,13 +167,13 @@ int main(void)
 
 			if (seconds_left == 0)
 			{
-				minutes_left--;
 				if (minutes_left == 0)
 				{
-					paused = true;
+					reset_timer(true);
 					// TODO : notify user
 				}
 
+				minutes_left--;
 				seconds_left = 59;
 			}
 			else
