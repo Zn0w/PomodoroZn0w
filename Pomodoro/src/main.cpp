@@ -9,17 +9,28 @@
 #include <stdio.h>
 
 
+static int screen_width, screen_height;
+
+static int pomodoro_duration = 25;
+static int break_duration = 5;
+
+static int minutes_left = pomodoro_duration;
+static int seconds_left = 0;
+static bool paused = true;
+
+
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 }
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
-void init_gui(GLFWwindow* window)
+static void init_gui(GLFWwindow* window)
 {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -37,7 +48,7 @@ void init_gui(GLFWwindow* window)
 	ImGui_ImplOpenGL3_Init("#version 130");
 }
 
-void destroy_gui()
+static void destroy_gui()
 {
 	// Cleanup
 	ImGui_ImplOpenGL3_Shutdown();
@@ -45,43 +56,34 @@ void destroy_gui()
 	ImGui::DestroyContext();
 }
 
-void render_gui()
+static void render_gui()
 {
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	static int counter = 0;
 	static bool show_fps = false;
 
 
-	ImGui::Begin("Timer Settings");
+	ImGui::Begin("Pomodoro Timer");
 
-	static int pomodoro_duration = 25;
-	ImGui::InputInt("Pomodoro duration (minutes)", &pomodoro_duration);
-	//ImGui::PushItemWidth(1000);
+	ImGui::Text("%.2d:%.2d", minutes_left, seconds_left);
 
-	const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
-	static const char* current_item = NULL;
-
-	if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
+	if (ImGui::Button("Start/Pause"))
 	{
-		for (int n = 0; n < IM_ARRAYSIZE(items); n++)
-		{
-			bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
-			if (ImGui::Selectable(items[n], is_selected))
-				current_item = items[n];
-			if (is_selected)
-				ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-		}
-		ImGui::EndCombo();
+		// if the button has been pressed
+		paused = !paused;
 	}
 
+	ImGui::SameLine();
 
-	ImGui::Text("OpenGL version: %s", glGetString(GL_VERSION));
-	ImGui::Text("GPU vendor: %s", glGetString(GL_VENDOR));
-	ImGui::Text("GPU model: %s", glGetString(GL_RENDERER));
+	if (ImGui::Button("Reset"))
+	{
+		minutes_left = pomodoro_duration;
+		seconds_left = 0;
+		paused = !paused;
+	}
 
 	ImGui::End();
 
@@ -92,15 +94,32 @@ void render_gui()
 int main(void)
 {
 	GLFWwindow* window;
+
 	glfwSetErrorCallback(error_callback);
+	
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
-	window = glfwCreateWindow(1280, 720, "Simple example", NULL, NULL);
+	
+	// get screen resolution
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	if (mode)
+	{
+		screen_width = mode->width / 2;
+		screen_height = mode->height / 2;
+	}
+	else
+	{
+		screen_width = 640;
+		screen_height = 480;
+	}
+
+	window = glfwCreateWindow(screen_width, screen_height, "PomodoroZn0w", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 
@@ -112,15 +131,34 @@ int main(void)
 
 	init_gui(window);
 
+	double last_time = glfwGetTime();
+	double current_time;
+
 	while (!glfwWindowShouldClose(window))
 	{
-		float ratio;
-		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
-		ratio = width / (float)height;
-		glViewport(0, 0, width, height);
+		glViewport(0, 0, screen_width, screen_height);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
+		current_time = glfwGetTime();
+		if (current_time - last_time >= 1 && !paused)
+		{
+			last_time = current_time;
+
+			if (seconds_left == 0)
+			{
+				minutes_left--;
+				if (minutes_left == 0)
+				{
+					paused = true;
+					// TODO : notify user
+				}
+
+				seconds_left = 59;
+			}
+			else
+				seconds_left--;
+		}
+
 		render_gui();
 
 		glfwSwapBuffers(window);
