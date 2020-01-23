@@ -11,13 +11,17 @@
 
 static int screen_width, screen_height;
 
-static int pomodoro_duration = 2;
-static int break_duration = 1;
+static int pomodoro_duration = 25;
+static int break_duration = 5;
+static int long_break_duration = 10;
+static int loop = 4;	// the amount of pomodoros, after which a long break is due
 
 static int minutes_left = pomodoro_duration;
 static int seconds_left = 0;
 static bool paused = true;
 static bool working = true;
+
+static int pomodoros = 0;
 
 
 static void reset_timer(bool go_next)
@@ -31,7 +35,13 @@ static void reset_timer(bool go_next)
 	if (working)
 		minutes_left = pomodoro_duration;
 	else
-		minutes_left = break_duration;
+	{
+		pomodoros++;
+		if ((pomodoros % loop) == 0)
+			minutes_left = long_break_duration;
+		else
+			minutes_left = break_duration;
+	}
 
 	seconds_left = 0;
 	paused = false;
@@ -89,7 +99,7 @@ static void render_gui()
 	if (working)
 		ImGui::Text("Focused Work");
 	else
-		ImGui::Text("Short Break");
+		ImGui::Text("Take a break");
 
 	ImGui::Text("%.2d:%.2d", minutes_left, seconds_left);
 
@@ -108,6 +118,8 @@ static void render_gui()
 	{
 		reset_timer(true);
 	}
+
+	ImGui::Text("Pomodoros done this session: %d", pomodoros);
 
 	ImGui::End();
 
@@ -164,7 +176,7 @@ int main(void)
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		current_time = glfwGetTime();
-		if (current_time - last_time >= 1 && !paused)
+		if (current_time - last_time >= 1.0 && !paused)
 		{
 			last_time = current_time;
 
