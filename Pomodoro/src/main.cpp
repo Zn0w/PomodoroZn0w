@@ -9,6 +9,13 @@
 #include <stdio.h>
 
 
+#define POMODORO_MIN 5
+#define POMODORO_MAX 180
+#define BREAK_MIN 1
+#define BREAK_MAX 20
+#define LONG_BREAK_MIN 5
+#define LONG_BREAK_MAX 60
+
 static int screen_width, screen_height;
 
 static int pomodoro_duration = 25;
@@ -122,7 +129,40 @@ static void construct_settings_window()
 {
 	ImGui::Begin("Timer Settings");
 
-	ImGui::Text("Hello World!");
+	int to_change_pomodoro = pomodoro_duration;
+	int to_change_break = break_duration;
+	int to_change_long_break = long_break_duration;
+
+	ImGui::SetNextItemWidth(100);
+	if (ImGui::InputInt("Pomodoro duration", &to_change_pomodoro))
+	{
+		if (to_change_pomodoro >= POMODORO_MIN && to_change_pomodoro <= POMODORO_MAX)
+		{
+			pomodoro_duration = to_change_pomodoro;
+		}
+	}
+
+	ImGui::SetNextItemWidth(100);
+	if (ImGui::InputInt("Break duration", &to_change_break))
+	{
+		if (to_change_break >= BREAK_MIN && to_change_break <= BREAK_MAX)
+		{
+			break_duration = to_change_break;
+		}
+	}
+
+	ImGui::SetNextItemWidth(100);
+	if (ImGui::InputInt("Long break duration", &to_change_long_break))
+	{
+		if (to_change_long_break >= LONG_BREAK_MIN && to_change_long_break <= LONG_BREAK_MAX)
+		{
+			long_break_duration = to_change_long_break;
+		}
+	}
+
+	ImGui::Text("Valid pomodoro duration: %d - %d (minutes)", POMODORO_MIN, POMODORO_MAX);
+	ImGui::Text("Valid break duration: %d - %d (minutes)", BREAK_MIN, BREAK_MAX);
+	ImGui::Text("Valid long break duration: %d - %d (minutes)", LONG_BREAK_MIN, LONG_BREAK_MAX);
 
 	ImGui::End();
 }
