@@ -36,7 +36,9 @@ static void reset_timer(bool go_next)
 		minutes_left = pomodoro_duration;
 	else
 	{
-		pomodoros++;
+		if (go_next)
+			pomodoros++;
+		
 		if ((pomodoros % loop) == 0)
 			minutes_left = long_break_duration;
 		else
@@ -84,16 +86,8 @@ static void destroy_gui()
 	ImGui::DestroyContext();
 }
 
-static void render_gui()
+static void construct_timer_window()
 {
-	// Start the Dear ImGui frame
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-
-	static bool show_fps = false;
-
-
 	ImGui::Begin("Pomodoro Timer");
 
 	if (working)
@@ -122,6 +116,29 @@ static void render_gui()
 	ImGui::Text("Pomodoros done this session: %d", pomodoros);
 
 	ImGui::End();
+}
+
+static void construct_settings_window()
+{
+	ImGui::Begin("Timer Settings");
+
+	ImGui::Text("Hello World!");
+
+	ImGui::End();
+}
+
+static void render_gui()
+{
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	static bool show_fps = false;
+
+	construct_timer_window();
+
+	construct_settings_window();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
