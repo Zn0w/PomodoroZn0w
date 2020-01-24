@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "file_io.h"
+
 
 #define POMODORO_MIN 5
 #define POMODORO_MAX 180
@@ -15,6 +17,8 @@
 #define BREAK_MAX 20
 #define LONG_BREAK_MIN 5
 #define LONG_BREAK_MAX 60
+
+#define SETTINGS_FILENAME "pomodoro.zn0wsettings"
 
 static int screen_width, screen_height;
 
@@ -127,7 +131,7 @@ static void construct_timer_window()
 
 static void construct_settings_window()
 {
-	ImGui::Begin("Timer Settings");
+	ImGui::Begin("Settings");
 
 	int to_change_pomodoro = pomodoro_duration;
 	int to_change_break = break_duration;
@@ -163,6 +167,47 @@ static void construct_settings_window()
 	ImGui::Text("Valid pomodoro duration: %d - %d (minutes)", POMODORO_MIN, POMODORO_MAX);
 	ImGui::Text("Valid break duration: %d - %d (minutes)", BREAK_MIN, BREAK_MAX);
 	ImGui::Text("Valid long break duration: %d - %d (minutes)", LONG_BREAK_MIN, LONG_BREAK_MAX);
+
+	if (ImGui::Button("Save changes"))
+	{
+		char buffer[256] = "";
+		char temp[8] = "";
+
+		_itoa(pomodoro_duration, temp, 10);
+		strcat(buffer, temp);
+		strcat(buffer, "\n");
+		memset(temp, 0, 8);
+
+		_itoa(break_duration, temp, 10);
+		strcat(buffer, temp);
+		strcat(buffer, "\n");
+		memset(temp, 0, 8);
+
+		_itoa(long_break_duration, temp, 10);
+		strcat(buffer, temp);
+		strcat(buffer, "\n");
+		memset(temp, 0, 8);
+
+		if (write_file(SETTINGS_FILENAME, buffer))
+		{
+			ImGui::OpenPopup("save_success");
+		}
+		else
+		{
+			ImGui::OpenPopup("save_failure");
+		}
+
+		if (ImGui::BeginPopup("save_success"))
+		{
+			ImGui::Text("Changes saved");
+			ImGui::EndPopup();
+		}
+		else if (ImGui::BeginPopup("save_failure"))
+		{
+			ImGui::Text("Failed to save changes");
+			ImGui::EndPopup();
+		}
+	}
 
 	ImGui::End();
 }
@@ -223,6 +268,35 @@ int main(void)
 	}
 
 	init_gui(window);
+
+	// load user settings if exist
+	char* buffer;
+	int length;
+	read_file(SETTINGS_FILENAME, &buffer, &length);
+	
+	if (length > 0)
+	{
+		char temp[8] = "";
+		
+		int i = 0;
+		while (buffer[i++] != '\n');
+		strncpy(temp, buffer, i - 1);
+		pomodoro_duration = atoi(temp);
+		memset(temp, 0, 8);
+		
+		int offset = i++;
+		while (buffer[i++] != '\n');
+		strncpy(temp, buffer + offset, i - offset - 1);
+		break_duration = atoi(temp);
+		memset(temp, 0, 8);
+
+		offset = i++;
+		while (buffer[i++] != '\n');
+		strncpy(temp, buffer + offset, i - offset - 1);
+		long_break_duration = atoi(temp);
+		memset(temp, 0, 8);
+	}
+
 
 	double last_time = glfwGetTime();
 	double current_time;
